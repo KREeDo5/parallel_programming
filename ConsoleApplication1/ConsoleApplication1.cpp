@@ -16,15 +16,16 @@ DWORD WINAPI ThreadProc(CONST LPVOID lpParam)
     ExitThread(0); // функция устанавливает код завершения потока в 0
 }
 
-int main()
+int main(int argc, char* argv[])
 {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
-    int n = 0;
 
-    std::cout << "Введите количество потоков: ";
+    int n = atoi(argv[1]);
 
-    std::cin >> n;
+    if (n <= 0) {
+        return 1;
+    }
 
     // создание n потоков
     HANDLE* handles = new HANDLE[n];
