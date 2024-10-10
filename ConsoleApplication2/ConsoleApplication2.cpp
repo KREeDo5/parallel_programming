@@ -12,7 +12,7 @@
 
 #pragma pack(push, 1) // отключение выравнивания структуры
 struct BMPHeader {
-    uint16_t file_type{ 0x4D42 }; // 'BM'
+    uint16_t file_type{ 0x4D42 };
     uint32_t file_size{ 0 };
     uint16_t reserved1{ 0 };
     uint16_t reserved2{ 0 };
@@ -38,7 +38,7 @@ struct BMPColorHeader {
     uint32_t green_mask{ 0x0000ff00 };
     uint32_t blue_mask{ 0x000000ff };
     uint32_t alpha_mask{ 0xff000000 };
-    uint32_t color_space_type{ 0x73524742 }; // sRGB
+    uint32_t color_space_type{ 0x73524742 };
     uint32_t unused[16]{ 0 };
 };
 #pragma pack(pop)
@@ -68,14 +68,12 @@ struct BMPImage {
 
         inp.read(reinterpret_cast<char*>(&bmp_info_header), sizeof(bmp_info_header));
 
-        // Проверка на 24-битные или 32-битные BMP
         if (bmp_info_header.bit_count == 32) {
             inp.read(reinterpret_cast<char*>(&bmp_color_header), sizeof(bmp_color_header));
         }
 
         inp.seekg(file_header.offset_data, inp.beg);
 
-        // Расчёт размера данных
         size_t row_padded = (bmp_info_header.width * bmp_info_header.bit_count / 8 + 3) & (~3);
         data.resize(row_padded * bmp_info_header.height);
         inp.read(reinterpret_cast<char*>(data.data()), data.size());
@@ -97,13 +95,11 @@ struct BMPImage {
     }
 };
 
-// Функция размытия
-void blur(const BMPImage& input, BMPImage& output, int start_row, int end_row) {
+static void blur(const BMPImage& input, BMPImage& output, int start_row, int end_row) {
     int width = input.bmp_info_header.width;
     int height = input.bmp_info_header.height;
     int bytes_per_pixel = input.bmp_info_header.bit_count / 8;
 
-    // Размер строки с учётом выравнивания до 4 байт
     size_t row_padded = (width * bytes_per_pixel + 3) & (~3);
 
     for (int y = start_row; y < end_row; ++y) {
@@ -111,7 +107,7 @@ void blur(const BMPImage& input, BMPImage& output, int start_row, int end_row) {
             int sum_r = 0, sum_g = 0, sum_b = 0;
             int count = 0;
 
-            // Проход по окрестности 3x3
+            // Блюр размера 3x3
             for (int ky = -1; ky <= 1; ++ky) {
                 for (int kx = -1; kx <= 1; ++kx) {
                     int nx = std::clamp(x + kx, 0, width - 1);
@@ -135,14 +131,13 @@ void blur(const BMPImage& input, BMPImage& output, int start_row, int end_row) {
             output.data[out_index + 1] = static_cast<uint8_t>(sum_g / count);
             output.data[out_index + 2] = static_cast<uint8_t>(sum_r / count);
             if (bytes_per_pixel == 4) {
-                output.data[out_index + 3] = input.data[out_index + 3]; // Альфа-канал
+                output.data[out_index + 3] = input.data[out_index + 3];
             }
         }
     }
 }
 
-// Многопоточная функция размытия
-void blur_multithread(const BMPImage& input, BMPImage& output, int threads_count) {
+static void blur_multithread(const BMPImage& input, BMPImage& output, int threads_count) {
     std::vector<std::thread> threads;
     int rows_per_thread = input.bmp_info_header.height / threads_count;
     int remaining_rows = input.bmp_info_header.height % threads_count;
@@ -176,15 +171,11 @@ int main(int argc, char* argv[]) {
     std::string input_file = argv[1];
     std::string output_file = argv[2];
     int threads_count = std::stoi(argv[3]);
-    int cores_count = std::stoi(argv[4]); // Теперь не используется
+    int cores_count = std::stoi(argv[4]); // для ядер
 
     try {
         BMPImage input(input_file);
-        BMPImage output = input; // Копируем заголовки и данные
-
-        // Если необходимо ограничить количество используемых ядер, это может быть реализовано с помощью Affinity.
-        // Однако, это зависит от операционной системы и требует отдельной реализации.
-        // В данном примере мы просто используем threads_count потоков без привязки к ядрам.
+        BMPImage output = input;
 
         blur_multithread(input, output, threads_count);
 
