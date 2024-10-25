@@ -1,6 +1,12 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\ConsoleA.e5bd4ab1",
+    "\\ConsoleA.e5bd4ab1\\x64",
+    "\\ConsoleA.e5bd4ab1\\x64\\Debug",
+    "\\x64",
+    "\\x64\\Debug"
   ],
+  "SelectedNode": "\\ConsoleA.e5bd4ab1\\x64\\Debug",
   "PreviewInSolutionExplorer": false
 }

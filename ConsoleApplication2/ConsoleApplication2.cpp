@@ -46,6 +46,17 @@ struct BMPColorHeader
 };
 #pragma pack(pop)
 
+struct UniqueClass {
+    int i;
+    BMPImage& input;
+    BMPImage& output;
+    int start_row;
+    int end_row;
+    int threads_count;
+    int cores_count;
+    int radius;
+};
+
 static double countTime(clock_t start, clock_t end)
 {
     double time = static_cast<double>(end - start) * 1000.0 / CLOCKS_PER_SEC;
@@ -160,9 +171,25 @@ static void blur(const BMPImage& input, BMPImage& output, int start_row, int end
     }
 }
 
-static void blur_multithread(const BMPImage& input, BMPImage& output, int threads_count, int cores_count, int radius)
+static DWORD WINAPI ThreadProc(CONST LPVOID lpParam)
 {
-    std::vector<std::thread> threads;
+    UniqueClass param = *(UniqueClass*)lpParam;
+    HANDLE thread_handle = GetCurrentThread();
+    std::cout << thread_handle << std::endl;
+    DWORD_PTR affinity_mask = (1 << (param.i % param.cores_count));
+    SetThreadAffinityMask(thread_handle, affinity_mask);
+
+    blur(param.input, param.output, param.start_row, param.end_row, param.radius);
+
+    ExitThread(0);
+}
+
+static void blur_multithread(const BMPImage& input, BMPImage& output, int threads_count, int cores_count, int radius)
+{   
+    // создание n потоков
+    HANDLE* handles = new HANDLE[threads_count];
+    struct  UniqueClass* parameter;
+
     int rows_per_thread = input.bmp_info_header.height / threads_count;
     int remaining_rows = input.bmp_info_header.height % threads_count;
 
@@ -175,29 +202,37 @@ static void blur_multithread(const BMPImage& input, BMPImage& output, int thread
         {
             current_end += remaining_rows; // Последний поток обрабатывает оставшиеся строки
         }
+        parameter.i = i;
 
-        threads.emplace_back([&input, &output, current_start, current_end, i, cores_count, radius]()
+        parameter(i, &input, &output, current_start, current_end, threads_count, cores_count, radius);
+
+        handles[i] = CreateThread(NULL, 0, ThreadProc, &parameter, 0, NULL);
+
+       /* threads.emplace_back([&input, &output, current_start, current_end, i, cores_count, radius]()
         {
             HANDLE thread_handle = GetCurrentThread();
+            std::cout << thread_handle << std::endl;
             DWORD_PTR affinity_mask = (1 << (i % cores_count));
             SetThreadAffinityMask(thread_handle, affinity_mask);
 
             blur(input, output, current_start, current_end, radius);
-        });
+        });*/
 
         current_start = current_end;
     }
 
-    for (auto& t : threads)
-    {
-        t.join();
-    }
+    WaitForMultipleObjects(threads_count, handles, TRUE, INFINITE);
 }
 
 int main(int argc, char* argv[])
 {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
+
+    HANDLE thread_handle = GetCurrentThread();
+
+    std::cout << "main" << std::endl;
+    std::cout << thread_handle << std::endl;
    
     if (argc != 6)
     {
@@ -213,7 +248,7 @@ int main(int argc, char* argv[])
 
     if (cores_count > std::thread::hardware_concurrency())
     {
-        std::cerr << "Ошибка: количество ядер превышает доступные в системе." << std::endl;
+        std::cerr << "Ошибка: количество ядер (физических потоков) превышает доступные в системе." << std::endl;
         return 1;
     }
 
