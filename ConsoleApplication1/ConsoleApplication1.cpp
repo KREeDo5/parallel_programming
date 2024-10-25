@@ -1,5 +1,8 @@
 ﻿#include <windows.h>
 #include <iostream>
+#include <fstream>
+#include <String>
+
 /*
 * [+] создает два потока, передает порядковый номер потока в потоковую функцию;
 * [ ] выполняет в цикле в каждом потоке заданное количество операций и пишет в файл время выполнения каждой операции в миллисекундах
@@ -11,10 +14,11 @@ struct ThreadData {
 };
 
 clock_t timeStart;
+std::string output;
 
 static double countTime(clock_t start, clock_t end)
 {
-    double time = static_cast<double>(end - start) * 1000 / CLOCKS_PER_SEC;
+    double time = static_cast<double>(end - start) * 1000.0 / CLOCKS_PER_SEC;
     return time;
 }
 
@@ -25,9 +29,16 @@ static DWORD WINAPI ThreadProc(CONST LPVOID lpParam)
     int operationCount = data->operationCount;
 
     for (int i = 0; i < operationCount; ++i)
-    {
+    {   
         clock_t currentTime = clock();
-        std::cout << threadNum << "|" << countTime(timeStart, currentTime) << std::endl;
+        int k = 0;
+        for (int i = 0; i < 1000000; ++i)
+        {
+            k += 1;
+        }
+        double time = countTime(timeStart, currentTime);
+        int timeInt = static_cast<int>(time);
+        output += std::to_string(threadNum) + "|" + std::to_string(timeInt) + "\n";
     }
 
     ExitThread(0);
@@ -40,6 +51,10 @@ int main(int argc, char* argv[])
 
     int n = 2;
     int k = atoi(argv[1]);                      // количество операций в цикле
+
+    std::string cat;
+
+    std::cin >> cat;
 
     timeStart = clock();
 
@@ -61,6 +76,20 @@ int main(int argc, char* argv[])
     }
 
     WaitForMultipleObjects(n, handles, TRUE, INFINITE);
+
+
+    for (int i = 0; i < n; i++) {
+        CloseHandle(handles[i]);
+    }
+
+    delete[] handles;
+    delete[] threadData;
+
+
+    std::ofstream file("output.txt");
+    file << output;
+    clock_t currentTime = clock();
+    file.close();
 
     return 0;
 }
