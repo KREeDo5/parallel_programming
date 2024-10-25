@@ -1,19 +1,36 @@
 ﻿#include <windows.h>
 #include <iostream>
 /*
-[+] Реализовать консольное приложение на С++, для работы с потоками использовать функцию CreateThread (Windows SDK).
-[+] Количество потоков передавать приложению в командной строке.
-[] Приложение должно ожидать окончание работы всех потоков после чего корректно завершаться. Для ожидания окончания работы все потоков используйте функцию WaitForMultipleObjects (Windows SDK).
-[] Разработать и сдать программу на занятии.
+* [+] создает два потока, передает порядковый номер потока в потоковую функцию;
+* [ ] выполняет в цикле в каждом потоке заданное количество операций и пишет в файл время выполнения каждой операции в миллисекундах
 */
 
-DWORD WINAPI ThreadProc(CONST LPVOID lpParam)
+struct ThreadData {
+    int threadNum;
+    int operationCount;
+};
+
+clock_t timeStart;
+
+static double countTime(clock_t start, clock_t end)
 {
-    int threadNum = *(int*)lpParam;
+    double time = static_cast<double>(end - start) * 1000 / CLOCKS_PER_SEC;
+    return time;
+}
 
-    std::cout << "Поток №" << threadNum << " выполняет свою работу\n";
+static DWORD WINAPI ThreadProc(CONST LPVOID lpParam)
+{
+    ThreadData* data = (ThreadData*)lpParam;
+    int threadNum = data->threadNum;
+    int operationCount = data->operationCount;
 
-    ExitThread(0); // функция устанавливает код завершения потока в 0
+    for (int i = 0; i < operationCount; ++i)
+    {
+        clock_t currentTime = clock();
+        std::cout << threadNum << "|" << countTime(timeStart, currentTime) << std::endl;
+    }
+
+    ExitThread(0);
 }
 
 int main(int argc, char* argv[])
@@ -21,24 +38,28 @@ int main(int argc, char* argv[])
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
 
-    int n = atoi(argv[1]);
+    int n = 2;
+    int k = atoi(argv[1]);                      // количество операций в цикле
 
-    if (n <= 0) {
-        return 1;
-    }
+    timeStart = clock();
 
-    // создание n потоков
-    HANDLE* handles = new HANDLE[n];
-
-    int* threadIds = new int[n];    // создание массива для хранения номеров потоков
+    HANDLE* handles = new HANDLE[n];            //создание n потоков
+    ThreadData* threadData = new ThreadData[n]; //массив для хранения данных потоков
 
     for (int i = 0; i < n; i++)
     {
-        threadIds[i] = i + 1;
-        handles[i] = CreateThread(NULL, 0, ThreadProc, &threadIds[i], 0, NULL);
+        threadData[i].threadNum = i + 1;
+        threadData[i].operationCount = k;
+
+        handles[i] = CreateThread(NULL, 0, ThreadProc, &threadData[i], 0, NULL);
+        if (i == 0) {
+            SetThreadPriority(handles[i], THREAD_PRIORITY_ABOVE_NORMAL);
+        }
+        else {
+            SetThreadPriority(handles[i], THREAD_PRIORITY_NORMAL);
+        }
     }
 
-    // ожидание окончания работы n потоков
     WaitForMultipleObjects(n, handles, TRUE, INFINITE);
 
     return 0;
