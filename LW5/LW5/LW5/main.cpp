@@ -31,16 +31,20 @@ int GetBalance() {
 }
 
 void Deposit(int money) {
+    WaitForSingleObject(FileLockingMutex, INFINITE); // Захват мьютекса
     int balance = GetBalance();
     balance += money;
 
     WriteToFile(balance);
     printf("Balance after deposit: %d\n", balance);
+    ReleaseMutex(FileLockingMutex); // Освобождение мьютекса
 }
 
 void Withdraw(int money) {
+    WaitForSingleObject(FileLockingMutex, INFINITE); // Захват мьютекса
     if (GetBalance() < money) {
         printf("Cannot withdraw money, balance lower than %d\n", money);
+        ReleaseMutex(FileLockingMutex); // Освобождение мьютекса
         return;
     }
 
@@ -49,6 +53,7 @@ void Withdraw(int money) {
     balance -= money;
     WriteToFile(balance);
     printf("Balance after withdraw: %d\n", balance);
+    ReleaseMutex(FileLockingMutex); // Освобождение мьютекса
 }
 
 DWORD WINAPI DoDeposit(CONST LPVOID lpParameter)
