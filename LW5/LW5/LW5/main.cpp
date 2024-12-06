@@ -4,89 +4,89 @@
 #include "tchar.h"
 #include <fstream>
 
-CRITICAL_SECTION FileLockingCriticalSection;
+HANDLE FileLockingMutex;
 
 int ReadFromFile() {
-	EnterCriticalSection(&FileLockingCriticalSection);
-	std::fstream myfile("balance.txt", std::ios_base::in);
-	int result;
-	myfile >> result;
-	myfile.close();
-	LeaveCriticalSection(&FileLockingCriticalSection);
+    WaitForSingleObject(FileLockingMutex, INFINITE); // Захват Mutex
+    std::fstream myfile("balance.txt", std::ios_base::in);
+    int result;
+    myfile >> result;
+    myfile.close();
+    ReleaseMutex(FileLockingMutex); // Освобождение Mutex
 
-	return result;
+    return result;
 }
 
 void WriteToFile(int data) {
-	EnterCriticalSection(&FileLockingCriticalSection);
-	std::fstream myfile("balance.txt", std::ios_base::out);
-	myfile << data << std::endl;
-	myfile.close();
-	LeaveCriticalSection(&FileLockingCriticalSection);
+    WaitForSingleObject(FileLockingMutex, INFINITE); // Захват Mutex
+    std::fstream myfile("balance.txt",  std::ios_base::out);
+    myfile << data << std::endl;
+    myfile.close();
+    ReleaseMutex(FileLockingMutex); // Освобождение Mutex
 }
 
 int GetBalance() {
-	int balance = ReadFromFile();
-	return balance;
+    int balance = ReadFromFile();
+    return balance;
 }
 
 void Deposit(int money) {
-	int balance = GetBalance();
-	balance += money;
+    int balance = GetBalance();
+    balance += money;
 
-	WriteToFile(balance);
-	printf("Balance after deposit: %d\n", balance);
+    WriteToFile(balance);
+    printf("Balance after deposit: %d\n", balance);
 }
 
 void Withdraw(int money) {
-	if (GetBalance() < money) {
-		printf("Cannot withdraw money, balance lower than %d\n", money);
-		return;
-	}
+    if (GetBalance() < money) {
+        printf("Cannot withdraw money, balance lower than %d\n", money);
+        return;
+    }
 
-	Sleep(20);
-	int balance = GetBalance();
-	balance -= money;
-	WriteToFile(balance);
-	printf("Balance after withdraw: %d\n", balance);
+    Sleep(20);
+    int balance = GetBalance();
+    balance -= money;
+    WriteToFile(balance);
+    printf("Balance after withdraw: %d\n", balance);
 }
 
 DWORD WINAPI DoDeposit(CONST LPVOID lpParameter)
 {
-	Deposit((int)lpParameter);
-	ExitThread(0);
+    Deposit((int)lpParameter);
+    ExitThread(0);
 }
 
 DWORD WINAPI DoWithdraw(CONST LPVOID lpParameter)
 {
-	Withdraw((int)lpParameter);
-	ExitThread(0);
+    Withdraw((int)lpParameter);
+    ExitThread(0);
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	HANDLE* handles = new HANDLE[49];
+    HANDLE* handles = new HANDLE[49];
 
-	InitializeCriticalSection(&FileLockingCriticalSection);
+    FileLockingMutex = CreateMutex(NULL, FALSE, NULL);
 
-	WriteToFile(0);
+    WriteToFile(0);
 
-	SetProcessAffinityMask(GetCurrentProcess(), 1);
-	for (int i = 0; i < 50; i++) {
-		handles[i] = (i % 2 == 0)
-			? CreateThread(NULL, 0, &DoDeposit, (LPVOID)230, CREATE_SUSPENDED, NULL)
-			: CreateThread(NULL, 0, &DoWithdraw, (LPVOID)1000, CREATE_SUSPENDED, NULL);
-		ResumeThread(handles[i]);
-	}
+    SetProcessAffinityMask(GetCurrentProcess(), 1);
+    for (int i = 0; i < 50; i++) {
+        handles[i] = (i % 2 == 0)
+            ? CreateThread(NULL, 0, &DoDeposit, (LPVOID)230, CREATE_SUSPENDED, NULL)
+            : CreateThread(NULL, 0, &DoWithdraw, (LPVOID)1000, CREATE_SUSPENDED, NULL);
+        ResumeThread(handles[i]);
+    }
 
 
-	// ожидание окончания работы двух потоков
-	WaitForMultipleObjects(50, handles, true, INFINITE);
-	printf("Final Balance: %d\n", GetBalance());
+    // ожидание окончания работы двух потоков
+    WaitForMultipleObjects(50, handles, true, INFINITE);
+    printf("Final Balance: %d\n", GetBalance());
 
-	getchar();
+    getchar();
 
-	DeleteCriticalSection(&FileLockingCriticalSection);
+    CloseHandle(FileLockingMutex); // Закрытие Mutex
 
-	return 0;
+    return 0;
 }
