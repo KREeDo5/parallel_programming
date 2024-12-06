@@ -7,22 +7,18 @@
 HANDLE FileLockingMutex;
 
 int ReadFromFile() {
-    WaitForSingleObject(FileLockingMutex, INFINITE); // Захват Mutex
     std::fstream myfile("balance.txt", std::ios_base::in);
     int result;
     myfile >> result;
     myfile.close();
-    ReleaseMutex(FileLockingMutex); // Освобождение Mutex
 
     return result;
 }
 
 void WriteToFile(int data) {
-    WaitForSingleObject(FileLockingMutex, INFINITE); // Захват Mutex
     std::fstream myfile("balance.txt",  std::ios_base::out);
     myfile << data << std::endl;
     myfile.close();
-    ReleaseMutex(FileLockingMutex); // Освобождение Mutex
 }
 
 int GetBalance() {
@@ -72,7 +68,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
     HANDLE* handles = new HANDLE[49];
 
-    FileLockingMutex = CreateMutex(NULL, FALSE, NULL);
+    FileLockingMutex = CreateMutex(NULL, FALSE, L"test");
 
     WriteToFile(0);
 

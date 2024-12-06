@@ -1,6 +1,6 @@
 ﻿  main.cpp
-D:\Repos\Github\PP\LW5\LW5\LW5\main.cpp(61,13): warning C4311: приведение типов: усечение указателя из "const LPVOID" в "int"
-D:\Repos\Github\PP\LW5\LW5\LW5\main.cpp(61,13): warning C4302: приведение типов: усечение из "const LPVOID" к "int"
-D:\Repos\Github\PP\LW5\LW5\LW5\main.cpp(67,14): warning C4311: приведение типов: усечение указателя из "const LPVOID" в "int"
-D:\Repos\Github\PP\LW5\LW5\LW5\main.cpp(67,14): warning C4302: приведение типов: усечение из "const LPVOID" к "int"
+D:\Repos\Github\PP\LW5\LW5\LW5\main.cpp(57,13): warning C4311: приведение типов: усечение указателя из "const LPVOID" в "int"
+D:\Repos\Github\PP\LW5\LW5\LW5\main.cpp(57,13): warning C4302: приведение типов: усечение из "const LPVOID" к "int"
+D:\Repos\Github\PP\LW5\LW5\LW5\main.cpp(63,14): warning C4311: приведение типов: усечение указателя из "const LPVOID" в "int"
+D:\Repos\Github\PP\LW5\LW5\LW5\main.cpp(63,14): warning C4302: приведение типов: усечение из "const LPVOID" к "int"
   LW5.vcxproj -> D:\Repos\Github\PP\LW5\LW5\x64\Debug\LW5.exe
