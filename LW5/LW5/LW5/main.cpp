@@ -31,16 +31,19 @@ int GetBalance() {
 }
 
 void Deposit(int money) {
-	int balance = GetBalance();
-	balance += money;
-
-	WriteToFile(balance);
-	printf("Balance after deposit: %d\n", balance);
+    EnterCriticalSection(&FileLockingCriticalSection); // Добавил начало критической секции
+    int balance = GetBalance();
+    balance += money;
+    WriteToFile(balance);
+    printf("Balance after deposit: %d\n", balance);
+    LeaveCriticalSection(&FileLockingCriticalSection); // Добавил конец критической секции
 }
 
 void Withdraw(int money) {
+	 EnterCriticalSection(&FileLockingCriticalSection); // Добавил начало критической секции
 	if (GetBalance() < money) {
 		printf("Cannot withdraw money, balance lower than %d\n", money);
+		LeaveCriticalSection(&FileLockingCriticalSection); // Добавил конец критической секции
 		return;
 	}
 
@@ -49,6 +52,7 @@ void Withdraw(int money) {
 	balance -= money;
 	WriteToFile(balance);
 	printf("Balance after withdraw: %d\n", balance);
+	LeaveCriticalSection(&FileLockingCriticalSection); // Добавил конец критической секции
 }
 
 DWORD WINAPI DoDeposit(CONST LPVOID lpParameter)
