@@ -8,7 +8,7 @@ using namespace std;
 
 const long long ITERATIONS = 1e8;
 
-double calculate_pi_for()
+double math_pi_for()
 {
     double pi = 0.0;
     for (long long i = 0; i < ITERATIONS; i++)
@@ -19,7 +19,7 @@ double calculate_pi_for()
     return pi * 4;
 }
 
-double calculate_pi_parallel_for_incorrect()
+double math_pi_parallel_for()
 {
     double pi = 0.0;
 #pragma omp parallel for
@@ -31,7 +31,7 @@ double calculate_pi_parallel_for_incorrect()
     return pi * 4;
 }
 
-double calculate_pi_parallel_for_atomic() {
+double math_pi_parallel_for_atomic() {
     double pi = 0.0;
 #pragma omp parallel for
     for (long long i = 0; i < ITERATIONS; i++)
@@ -43,7 +43,7 @@ double calculate_pi_parallel_for_atomic() {
     return pi * 4;
 }
 
-double calculate_pi_parallel_for_reduction()
+double math_pi_parallel_for_reduction()
 {
     double pi = 0.0;
 #pragma omp parallel for reduction(+:pi)
@@ -62,22 +62,22 @@ int main() {
     cout << setprecision(15);
 
     double start_time = omp_get_wtime();
-    double pi_for = calculate_pi_for();
+    double pi_for = math_pi_for();
     double time_for = omp_get_wtime() - start_time;
-    cout << "For (синхронно): " << pi_for << "\nВремя выполнения: " << time_for << " сек\n\n\n";
+    cout << "For: " << pi_for << "\nВремя выполнения: " << time_for << " сек\n\n\n";
 
     start_time = omp_get_wtime();
-    double pi_parallel_for_incorrect = calculate_pi_parallel_for_incorrect();
+    double pi_parallel_for_incorrect = math_pi_parallel_for();
     double time_parallel_for_incorrect = omp_get_wtime() - start_time;
-    cout << "For (неверно): " << pi_parallel_for_incorrect << "\nВремя выполнения: " << time_parallel_for_incorrect << " сек\n\n\n";
+    cout << "Parallel for: " << pi_parallel_for_incorrect << "\nВремя выполнения: " << time_parallel_for_incorrect << " сек\n\n\n";
 
     start_time = omp_get_wtime();
-    double pi_parallel_for_atomic = calculate_pi_parallel_for_atomic();
+    double pi_parallel_for_atomic = math_pi_parallel_for_atomic();
     double time_parallel_for_atomic = omp_get_wtime() - start_time;
     cout << "Parallel for и atomic: " << pi_parallel_for_atomic << "\nВремя выполнения: " << time_parallel_for_atomic << " сек\n\n\n";
 
     start_time = omp_get_wtime();
-    double pi_parallel_for_reduction = calculate_pi_parallel_for_reduction();
+    double pi_parallel_for_reduction = math_pi_parallel_for_reduction();
     double time_parallel_for_reduction = omp_get_wtime() - start_time;
     cout << "Reduction: " << pi_parallel_for_reduction << "\nВремя выполнения: " << time_parallel_for_reduction << " сек\n";
 
