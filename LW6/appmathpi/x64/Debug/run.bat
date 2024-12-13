@@ -2,6 +2,8 @@
 
 echo Run appmathpi.exe...
 
-appmathpi.exe
+start appmathpi.exe
+start appmathpi.exe
+start appmathpi.exe
 
 pause
